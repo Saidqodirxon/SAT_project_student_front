@@ -34,25 +34,32 @@ const TestResults = () => {
         const correctChoice = (q.choices || []).find(c => c.id === q.correct_choice_id);
         const studentChoice = (q.choices || []).find(c => c.id === q.student_choice_id);
   
+        let correct_answer = null;
+        let student_answer = null;
+  
+        if (q.question_type === 'mcq') {
+          correct_answer = correctChoice ? correctChoice.choice_label : null;
+          student_answer = studentChoice ? studentChoice.choice_label : null;
+        } else if (q.question_type === 'math_free') {
+          correct_answer = q.correct_answers?.join(', ') || null;
+          student_answer = q.student_text_answer || null;
+        }
+  
         flatQuestions.push({
           id: q.id,
           section_name: s.section_name,
           question_text: q.question_text,
           passage_text: q.passage_text,
+          image: q.image || null,
+          question_type: q.question_type,
           choices: q.choices || [],
-          // keep ids, but also provide the labels your UI expects:
           correct_choice_id: q.correct_choice_id,
           student_choice_id: q.student_choice_id,
-          correct_answer: correctChoice ? correctChoice.choice_label : null,   // "A"/"B"/...
-          student_answer: studentChoice ? studentChoice.choice_label : null,   // "A"/"B"/...
-          is_correct: q.student_choice_id == null
-            ? false
-            : (q.student_choice_id === q.correct_choice_id),
+          correct_answer,
+          student_answer,
+          is_correct: q.is_correct ?? (student_answer && correct_answer && student_answer.trim().toLowerCase() === correct_answer.trim().toLowerCase()),
           marks: q.marks,
           marks_earned: q.marks_earned,
-          // your JSON doesn't have these; keep safe fallbacks
-          difficulty: q.difficulty ?? null,
-          difficulty_percentage: q.difficulty_percentage ?? null,
         });
       });
     });
@@ -361,6 +368,27 @@ const TestResults = () => {
                   </div>
                 </div>
               </div>
+
+              {/* For math_free questions */}
+              {selectedQuestion.question_type === 'math_free' && (
+                <div className="mb-6">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-gray-700"><strong>Your Answer:</strong> {selectedQuestion.student_answer || 'Omitted'}</p>
+                    <p className="text-gray-700"><strong>Correct Answer:</strong> {selectedQuestion.correct_answer || 'N/A'}</p>
+                  </div>
+                </div>
+              )}
+              {selectedQuestion.image && (
+                <div className="mb-4 flex justify-center">
+                  <img
+                    src={selectedQuestion.image}
+                    alt="Question Illustration"
+                    className="max-h-[400px] w-auto object-contain rounded-lg border shadow-sm"
+                    style={{ maxWidth: '100%' }}
+                  />
+                </div>
+              )}
+
 
               {/* Answer Choices */}
               <div className="space-y-3 mb-6">
